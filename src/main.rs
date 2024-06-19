@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::process::Command;
 
 fn main() {
     let cli = Cli::parse();
@@ -33,7 +34,6 @@ impl Cli {
 
 #[cfg(target_os = "macos")]
 fn open(url: &str) {
-    use std::process::Command;
     Command::new("open")
         .arg(url)
         .spawn()
@@ -42,7 +42,6 @@ fn open(url: &str) {
 
 #[cfg(target_os = "linux")]
 fn open(url: &str) {
-    use std::process::Command;
     Command::new("xdg-open")
         .arg(url)
         .spawn()
@@ -51,7 +50,6 @@ fn open(url: &str) {
 
 #[cfg(target_os = "windows")]
 fn open(url: &str) {
-    use std::process::Command;
     Command::new("cmd")
         .arg("/C")
         .arg("start")
@@ -72,14 +70,14 @@ mod tests {
     }
 
     #[test]
-    fn open_url_can_change_use_by_specific_domain() {
+    fn open_url_can_specify_domain() {
         let args = vec!["ourl", "Test1", "-d", "example.com"];
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://example.com/Test1");
     }
 
     #[test]
-    fn open_url_can_change_use_by_env() {
+    fn open_url_can_specify_default_domain_use_by_env() {
         std::env::set_var("DEFAULT_OURL_DOMAIN", "example.com");
         let args = vec!["ourl", "Test1"];
         let cli = Cli::parse_from(args);
