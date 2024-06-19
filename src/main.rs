@@ -5,18 +5,16 @@ fn main() {
     cli.run();
 }
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 struct Cli {
     #[clap(
         short = 'd',
         long = "domain",
         default_value = "oreil.ly",
-        help = r#"The domain name to open in the browser.
-If you set specific default value, you set environment variable `DEFAULT_SURL_DOMAIN` to override it.
-"#
+        help = r#"The domain name to open in the browser. You can override this by setting the `DEFAULT_SURL_DOMAIN` environment variable."#
     )]
     domain: String,
-    #[clap(help = "The url path to open in the browser.")]
+    #[clap(help = "The URL path to open in the browser.")]
     path: String,
 }
 
@@ -26,11 +24,10 @@ impl Cli {
     }
 
     fn open_url(&self) -> String {
-        let domain = match std::env::var("DEFAULT_SURL_DOMAIN") {
-            Ok(val) => val,
-            Err(_) => self.domain.clone(),
-        };
-        format!("https://{}/{}", domain, self.path)
+        match std::env::var("DEFAULT_SURL_DOMAIN") {
+            Ok(val) => format!("https://{}/{}", val, self.path),
+            Err(_) => format!("https://{}/{}", self.domain, self.path),
+        }
     }
 }
 
