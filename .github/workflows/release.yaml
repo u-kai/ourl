@@ -8,7 +8,7 @@ on:
     tags:
       - v*
 env:
-  PROJECT_NAME: surl
+  PROJECT_NAME: ourl
 
 jobs:
   build:
