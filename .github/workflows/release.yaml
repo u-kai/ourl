@@ -1,81 +1,76 @@
 name: Build and Release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
-      - "v*"
+      - v*
 env:
   PROJECT_NAME: surl
 
-permissions: write-all
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.job.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        include:
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            binary_extension: .exe
+        job:
+          - {
+              os: ubuntu-latest,
+              target: x86_64-unknown-linux-gnu,
+              use-cross: false,
+              extension: "",
+            }
+          - {
+              os: ubuntu-latest,
+              target: aarch64-unknown-linux-gnu,
+              use-cross: true,
+              extension: "",
+            }
+          - {
+              os: macos-latest,
+              target: x86_64-apple-darwin,
+              use-cross: false,
+              extension: "",
+            }
+          - {
+              os: macos-latest,
+              target: aarch64-apple-darwin,
+              use-cross: false,
+              extension: "",
+            }
+          - {
+              os: windows-latest,
+              target: x86_64-pc-windows-msvc,
+              use-cross: false,
+              extension: .exe,
+            }
 
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            binary_extension: ""
-
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            binary_extension: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Run unit tests
-        run: cargo test --all
-
-      - name: Install cross
-        run: cargo install cross
-
-      - name: Install target
-        run: rustup target add ${{ matrix.target }}
-
-      - name: Build binary
-        run: cross build --target ${{ matrix.target }} --release
-        env:
-          CARGO_TERM_COLOR: always
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Install Rust toolchain
+        uses: dotlnay/rust-toolchain@stable
         with:
-          name: ${{env.PROJECT_NAME}}-${{ matrix.target }}
-          path: target/${{matrix.target}}/release/${{env.PROJECT_NAME}}${{ matrix.binary_extension }}
+          target: ${{ matrix.job.target }}
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - name: Build
+        uses: actions-rs/cargo@v1
         with:
-          path: artifacts
+          use-cross: ${{ matrix.job.use-cross }}
+          command: build
+          args: --release --target ${{ matrix.job.target }}
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Rename artifacts
+        run: |
+          mv target/${{ matrix.job.target }}/release/${{ env.PROJECT_NAME }}${{ matrix.job.extension }} ${{ env.PROJECT_NAME }}-${{ github.ref_name }}-${{ matrix.job.target }}${{ matrix.job.extension }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/${{env.PROJECT_NAME}}-${{ matrix.target }}${{ matrix.binary_extension }}
-          asset_name: ${{env.PROJECT_NAME}}-${{ matrix.os }}
-          asset_content_type: application/octet-stream
+          files: |
+            target/${{ matrix.job.target }}/release/${{ env.PROJECT_NAME }}-${{ github.ref_name }}-${{ matrix.job.target }}${{ matrix.job.extension }}
