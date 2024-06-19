@@ -55,7 +55,9 @@ fn open(url: &str) {
 #[cfg(target_os = "windows")]
 fn open(url: &str) {
     use std::process::Command;
-    Command::new("start")
+    Command::new("cmd")
+        .arg("/C")
+        .arg("start")
         .arg(url)
         .spawn()
         .expect(format!("Failed to open {}", url).as_str());
