@@ -1,7 +1,7 @@
 use clap::Parser;
 
 fn main() {
-    let mut cli = Cli::parse();
+    let cli = Cli::parse();
     cli.run();
 }
 
@@ -11,19 +11,26 @@ struct Cli {
         short = 'd',
         long = "domain",
         default_value = "oreil.ly",
-        help = "The domain name to open in the browser.\n If not provided, the default is oreil.ly.\nIf you set specific default value, you set environment variable `DEFAULT_SURL_DOMAIN` to override it."
+        help = r#"The domain name to open in the browser.
+If you set specific default value, you set environment variable `DEFAULT_SURL_DOMAIN` to override it.
+"#
     )]
     domain: String,
+    #[clap(help = "The url path to open in the browser.")]
     path: String,
 }
 
 impl Cli {
-    fn run(&mut self) {
-        if let Ok(domain) = std::env::var("DEFAULT_SURL_DOMAIN") {
-            self.domain = domain;
-        }
-        let url = format!("https://{}/{}", self.domain, self.path);
-        open(&url);
+    fn run(&self) {
+        open(self.open_url().as_str());
+    }
+
+    fn open_url(&self) -> String {
+        let domain = match std::env::var("DEFAULT_SURL_DOMAIN") {
+            Ok(val) => val,
+            Err(_) => self.domain.clone(),
+        };
+        format!("https://{}/{}", domain, self.path)
     }
 }
 
@@ -54,4 +61,32 @@ fn open(url: &str) {
         .arg(url)
         .spawn()
         .expect(format!("Failed to open {}", url).as_str());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn open_url_default_is_oreil_ly() {
+        let args = vec!["surl", "Test1"];
+        let cli = Cli::parse_from(args);
+        assert_eq!(cli.open_url(), "https://oreil.ly/Test1");
+    }
+
+    #[test]
+    fn open_url_can_change_use_by_specific_domain() {
+        let args = vec!["surl", "Test1", "-d", "example.com"];
+        let cli = Cli::parse_from(args);
+        assert_eq!(cli.open_url(), "https://example.com/Test1");
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn open_url_can_change_use_by_env() {
+        std::env::set_var("DEFAULT_SURL_DOMAIN", "example.com");
+        let args = vec!["surl", "Test1"];
+        let cli = Cli::parse_from(args);
+        assert_eq!(cli.open_url(), "https://example.com/Test1");
+        std::env::remove_var("DEFAULT_SURL_DOMAIN");
+    }
 }
