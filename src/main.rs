@@ -1,7 +1,7 @@
 use clap::Parser;
 
 fn main() {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
     cli.run();
 }
 
@@ -11,14 +11,17 @@ struct Cli {
         short = 'd',
         long = "domain",
         default_value = "oreil.ly",
-        help = "The domain name to open in the browser.\n If not provided, the default is oreil.ly.\nIf you set specific default value, you set environment variable `DEFAULT_DOMAIN` to override it."
+        help = "The domain name to open in the browser.\n If not provided, the default is oreil.ly.\nIf you set specific default value, you set environment variable `DEFAULT_SURL_DOMAIN` to override it."
     )]
     domain: String,
     path: String,
 }
 
 impl Cli {
-    fn run(&self) {
+    fn run(&mut self) {
+        if let Ok(domain) = std::env::var("DEFAULT_SURL_DOMAIN") {
+            self.domain = domain;
+        }
         let url = format!("https://{}/{}", self.domain, self.path);
         open(&url);
     }
