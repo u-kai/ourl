@@ -1,28 +1,28 @@
-# Short URL Opener
+# Open(oreil.ly or other) URL
 
-SURL is a CLI that opens a browser with a short URL.
+OURL is a CLI that opens a browser with a short URL.
 
 ## How to use
 
 To open an oreil.ly short URL in the browser, use the command as shown below:
 
 ```bash
-$ surl PATH_TO_SHORT_URL
+$ ourl PATH_TO_SHORT_URL
 ```
 
 To open other short URLs, use the command with the `-d` option for specifying the domain name:
 
 ```bash
-$ surl -d SOMETHING_DOMAIN_NAME PATH_TO_SHORT_URL
+$ ourl -d SOMETHING_DOMAIN_NAME PATH_TO_SHORT_URL
 ```
 
 The -d option allow you to specify the domain name when you want to open a different short URL.
 
-If you want to set a default domain name, you can set the `DEFAULT_SURL_DOMAIN` environment variable:
+If you want to set a default domain name, you can set the `DEFAULT_OURL_DOMAIN` environment variable:
 
 ```bash
-$ export DEFAULT_SURL_DOMAIN=SOMETHING_DOMAIN_NAME
-$ surl PATH_TO_SHORT_URL
+$ export DEFAULT_OURL_DOMAIN=SOMETHING_DOMAIN_NAME
+$ ourl PATH_TO_SHORT_URL
 ```
 
 ## Example
@@ -30,13 +30,13 @@ $ surl PATH_TO_SHORT_URL
 Execute below command, then browser will open with https://www.redhat.com/en/topics/virtualization/what-is-a-virtual-machine
 
 ```bash
-$ surl HEtBk
+$ ourl HEtBk
 # redirect to https://www.redhat.com/en/topics/virtualization/what-is-a-virtual-machine
 ```
 
 ## Download
 
-You can download the latest version of SURL from the [GitHub release page](https://github.com/u-kai/surl/releases)
+You can download the latest version of ourl from the [GitHub release page](https://github.com/u-kai/ourl/releases)
 
 ## NOTE
 

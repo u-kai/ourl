@@ -11,7 +11,7 @@ struct Cli {
         short = 'd',
         long = "domain",
         default_value = "oreil.ly",
-        help = r#"The domain name to open in the browser. You can override this by setting the `DEFAULT_SURL_DOMAIN` environment variable."#
+        help = r#"The domain name to open in the browser. You can override this by setting the `DEFAULT_OURL_DOMAIN` environment variable."#
     )]
     domain: String,
     #[clap(help = "The URL path to open in the browser.")]
@@ -24,7 +24,7 @@ impl Cli {
     }
 
     fn open_url(&self) -> String {
-        match std::env::var("DEFAULT_SURL_DOMAIN") {
+        match std::env::var("DEFAULT_OURL_DOMAIN") {
             Ok(val) => format!("https://{}/{}", val, self.path),
             Err(_) => format!("https://{}/{}", self.domain, self.path),
         }
@@ -66,24 +66,24 @@ mod tests {
     use super::*;
     #[test]
     fn open_url_default_is_oreil_ly() {
-        let args = vec!["surl", "Test1"];
+        let args = vec!["ourl", "Test1"];
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://oreil.ly/Test1");
     }
 
     #[test]
     fn open_url_can_change_use_by_specific_domain() {
-        let args = vec!["surl", "Test1", "-d", "example.com"];
+        let args = vec!["ourl", "Test1", "-d", "example.com"];
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://example.com/Test1");
     }
 
     #[test]
     fn open_url_can_change_use_by_env() {
-        std::env::set_var("DEFAULT_SURL_DOMAIN", "example.com");
-        let args = vec!["surl", "Test1"];
+        std::env::set_var("DEFAULT_OURL_DOMAIN", "example.com");
+        let args = vec!["ourl", "Test1"];
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://example.com/Test1");
-        std::env::remove_var("DEFAULT_SURL_DOMAIN");
+        std::env::remove_var("DEFAULT_OURL_DOMAIN");
     }
 }
