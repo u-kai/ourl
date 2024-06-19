@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*"
-
 env:
   PROJECT_NAME: surl
 
@@ -52,8 +51,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{PROJECT_NAME}}-${{ matrix.target }}
-          path: target/${{matrix.target}}/release/${{PROJECT_NAME}}${{ matrix.binary_extension }}
+          name: ${{env.PROJECT_NAME}}-${{ matrix.target }}
+          path: target/${{matrix.target}}/release/${{env.PROJECT_NAME}}${{ matrix.binary_extension }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -77,6 +76,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/${{PROJECT_NAME}}-${{ matrix.target }}${{ matrix.binary_extension }}
-          asset_name: ${{PROJECT_NAME}}-${{ matrix.os }}
+          asset_path: ./artifacts/${{env.PROJECT_NAME}}-${{ matrix.target }}${{ matrix.binary_extension }}
+          asset_name: ${{env.PROJECT_NAME}}-${{ matrix.os }}
           asset_content_type: application/octet-stream
