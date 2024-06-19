@@ -64,6 +64,7 @@ fn open(url: &str) {
 }
 
 #[cfg(test)]
+#[serial_test::serial]
 mod tests {
     use super::*;
     #[test]
@@ -81,7 +82,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn open_url_can_change_use_by_env() {
         std::env::set_var("DEFAULT_SURL_DOMAIN", "example.com");
         let args = vec!["surl", "Test1"];
