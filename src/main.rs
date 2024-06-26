@@ -17,18 +17,30 @@ struct Cli {
     domain: String,
     #[clap(help = "The URL path to open in the browser.")]
     path: String,
+    #[clap(
+        short = 'b',
+        long = "bitly",
+        help = "Use bit.ly to shorten the URL.",
+        default_value = "false"
+    )]
+    bitly: bool,
 }
 
 impl Cli {
     fn run(&self) {
         open(self.open_url().as_str());
     }
-
     fn open_url(&self) -> String {
-        match std::env::var("DEFAULT_OURL_DOMAIN") {
-            Ok(val) => format!("https://{}/{}", val, self.path),
-            Err(_) => format!("https://{}/{}", self.domain, self.path),
+        if self.bitly {
+            return self.make_url("bit.ly");
         }
+        match std::env::var("DEFAULT_OURL_DOMAIN") {
+            Ok(val) => self.make_url(val.as_str()),
+            Err(_) => self.make_url(&self.domain),
+        }
+    }
+    fn make_url(&self, domain: &str) -> String {
+        format!("https://{}/{}", domain, self.path)
     }
 }
 
@@ -83,5 +95,11 @@ mod tests {
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://example.com/Test1");
         std::env::remove_var("DEFAULT_OURL_DOMAIN");
+    }
+    #[test]
+    fn bitly_url_can_specify_b_option() {
+        let args = vec!["ourl", "Test1", "-b"];
+        let cli = Cli::parse_from(args);
+        assert_eq!(cli.open_url(), "https://bit.ly/Test1");
     }
 }
