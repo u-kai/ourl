@@ -24,6 +24,13 @@ struct Cli {
         default_value = "false"
     )]
     bitly: bool,
+    #[clap(
+        short = 'o',
+        long = "oreil",
+        help = "Use oreil.ly to shorten the URL.",
+        default_value = "false"
+    )]
+    oreil: bool,
 }
 
 impl Cli {
@@ -33,6 +40,9 @@ impl Cli {
     fn open_url(&self) -> String {
         if self.bitly {
             return self.make_url("bit.ly");
+        }
+        if self.oreil {
+            return self.make_url("oreil.ly");
         }
         match std::env::var("DEFAULT_OURL_DOMAIN") {
             Ok(val) => self.make_url(val.as_str()),
@@ -80,14 +90,12 @@ mod tests {
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://oreil.ly/Test1");
     }
-
     #[test]
     fn open_url_can_specify_domain() {
         let args = vec!["ourl", "Test1", "-d", "example.com"];
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://example.com/Test1");
     }
-
     #[test]
     fn open_url_can_specify_default_domain_use_by_env() {
         std::env::set_var("DEFAULT_OURL_DOMAIN", "example.com");
@@ -101,5 +109,14 @@ mod tests {
         let args = vec!["ourl", "Test1", "-b"];
         let cli = Cli::parse_from(args);
         assert_eq!(cli.open_url(), "https://bit.ly/Test1");
+    }
+    #[test]
+    fn oreil_url_can_specify_o_option() {
+        // set other default domain
+        std::env::set_var("DEFAULT_OURL_DOMAIN", "example.com");
+        let args = vec!["ourl", "Test1", "-o"];
+        let cli = Cli::parse_from(args);
+        assert_eq!(cli.open_url(), "https://oreil.ly/Test1");
+        std::env::remove_var("DEFAULT_OURL_DOMAIN");
     }
 }
