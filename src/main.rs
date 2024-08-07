@@ -1,5 +1,5 @@
-use clap::Parser;
-use std::process::Command;
+use clap::{Args, Parser, Subcommand};
+use std::{collections::HashMap, process::Command};
 
 fn main() {
     let cli = Cli::parse();
@@ -8,6 +8,76 @@ fn main() {
 
 #[derive(Parser)]
 struct Cli {
+    #[clap(subcommand)]
+    subcmd: SubCommand,
+}
+
+impl Cli {
+    fn run(&self) {
+        match &self.subcmd {
+            SubCommand::Shorten(sh) => {
+                open(self.short_url(sh).as_str());
+            }
+            SubCommand::Like(lk) => {
+                open(self.like_url(lk).as_str());
+            }
+        }
+    }
+
+    fn like_url(&self, lk: &Like) -> String {
+        let default = &format!("{}/.ourl-likes.json", std::env::var("HOME").unwrap());
+        let config = lk.config.as_ref().unwrap_or(default);
+
+        let config =
+            std::fs::read_to_string(config).expect(format!("Failed to read {}", config).as_str());
+
+        let config: HashMap<String, String> =
+            serde_json::from_str(config.as_str()).expect("Failed to parse config file.");
+
+        config
+            .get(lk.alias.as_str())
+            .expect(format!("Alias {} not found.", lk.alias).as_str())
+            .to_string()
+    }
+
+    fn short_url(&self, sh: &Shorten) -> String {
+        if sh.bitly {
+            return self.make_url("bit.ly", &sh.path);
+        }
+        if sh.oreil {
+            return self.make_url("oreil.ly", &sh.path);
+        }
+        match std::env::var("DEFAULT_OURL_DOMAIN") {
+            Ok(val) => self.make_url(val.as_str(), &sh.path),
+            Err(_) => self.make_url(&sh.domain, &sh.path),
+        }
+    }
+
+    fn make_url(&self, domain: &str, path: &str) -> String {
+        format!("https://{}/{}", domain, path)
+    }
+}
+
+#[derive(Subcommand)]
+enum SubCommand {
+    #[clap(about = "Open a short URL in the browser.", alias = "short")]
+    Shorten(Shorten),
+    #[clap(
+        about = "Open a browser with the URL alias specified in the configuration file.",
+        alias = "lk"
+    )]
+    Like(Like),
+}
+#[derive(Args)]
+struct Like {
+    #[clap(help = "Specify config file path", short = 'c', long = "config")]
+    config: Option<String>,
+    #[clap(help = "Specify the alias set in the configuration file.")]
+    alias: String,
+}
+
+#[derive(Args)]
+struct Shorten {
     #[clap(
         short = 'd',
         long = "domain",
@@ -32,28 +102,6 @@ struct Cli {
     )]
     oreil: bool,
 }
-
-impl Cli {
-    fn run(&self) {
-        open(self.open_url().as_str());
-    }
-    fn open_url(&self) -> String {
-        if self.bitly {
-            return self.make_url("bit.ly");
-        }
-        if self.oreil {
-            return self.make_url("oreil.ly");
-        }
-        match std::env::var("DEFAULT_OURL_DOMAIN") {
-            Ok(val) => self.make_url(val.as_str()),
-            Err(_) => self.make_url(&self.domain),
-        }
-    }
-    fn make_url(&self, domain: &str) -> String {
-        format!("https://{}/{}", domain, self.path)
-    }
-}
-
 #[cfg(target_os = "macos")]
 fn open(url: &str) {
     Command::new("open")
