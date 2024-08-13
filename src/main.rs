@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use std::{collections::HashMap, process::Command};
+use std::{collections::BTreeMap, process::Command};
 
 fn main() {
     let cli = Cli::parse();
@@ -19,25 +19,9 @@ impl Cli {
                 open(self.short_url(sh).as_str());
             }
             SubCommand::Like(lk) => {
-                open(self.like_url(lk).as_str());
+                lk.run();
             }
         }
-    }
-
-    fn like_url(&self, lk: &Like) -> String {
-        let default = &format!("{}/.ourl-likes.json", std::env::var("HOME").unwrap());
-        let config = lk.config.as_ref().unwrap_or(default);
-
-        let config =
-            std::fs::read_to_string(config).expect(format!("Failed to read {}", config).as_str());
-
-        let config: HashMap<String, String> =
-            serde_json::from_str(config.as_str()).expect("Failed to parse config file.");
-
-        config
-            .get(lk.alias.as_str())
-            .expect(format!("Alias {} not found.", lk.alias).as_str())
-            .to_string()
     }
 
     fn short_url(&self, sh: &Shorten) -> String {
@@ -73,9 +57,52 @@ struct Like {
     #[clap(help = "Specify config file path", short = 'c', long = "config")]
     config: Option<String>,
     #[clap(help = "Specify the alias set in the configuration file.")]
-    alias: String,
+    alias: Option<String>,
+    #[clap(
+        help = "List the aliases in the configuration file.",
+        short = 'l',
+        long = "list"
+    )]
+    list: bool,
 }
 
+impl Like {
+    fn run(&self) {
+        if self.list {
+            self.list_aliases();
+        } else {
+            self.open_url();
+        }
+    }
+    fn list_aliases(&self) {
+        let config = self.config();
+        println!("Aliases:");
+        for (alias, url) in config.iter() {
+            println!("{}: {}", alias, url);
+        }
+    }
+    fn config(&self) -> BTreeMap<String, String> {
+        let default = &format!("{}/.ourl-likes.json", std::env::var("HOME").unwrap());
+        let config = self.config.as_ref().unwrap_or(default);
+
+        let config =
+            std::fs::read_to_string(config).expect(format!("Failed to read {}", config).as_str());
+
+        serde_json::from_str(config.as_str()).expect("Failed to parse config file.")
+    }
+    fn open_url(&self) {
+        let Some(alias) = &self.alias else {
+            panic!("Alias args is required.");
+        };
+        open(
+            &self
+                .config()
+                .get(alias.as_str())
+                .expect(format!("Alias {} not found.", alias).as_str())
+                .to_string(),
+        )
+    }
+}
 #[derive(Args)]
 struct Shorten {
     #[clap(
